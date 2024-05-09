@@ -35,6 +35,7 @@ import (
 	selinux "github.com/opencontainers/selinux/go-selinux"
 	"golang.org/x/net/context"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"k8s.io/klog/v2"
 
 	cio "github.com/containerd/containerd/pkg/cri/io"
 	customopts "github.com/containerd/containerd/pkg/cri/opts"
@@ -74,6 +75,7 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 	}
 	containerName := metadata.Name
 	name := makeContainerName(metadata, sandboxConfig.GetMetadata())
+	klog.Infof("%s [CONTINUUM] 0912 containerd:CreateContainer:start sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 	log.G(ctx).Debugf("Generated id %q for container %q", id, name)
 	if err = c.containerNameIndex.Reserve(name, id); err != nil {
 		return nil, fmt.Errorf("failed to reserve container name %q: %w", name, err)
@@ -140,6 +142,7 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 			}
 		}
 	}()
+	klog.Infof("%s [CONTINUUM] 0913 containerd:getContainerRootDir:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 
 	var volumeMounts []*runtime.Mount
 	if !c.config.IgnoreImageDefinedVolumes {
@@ -157,6 +160,8 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 		return nil, fmt.Errorf("failed to get sandbox runtime: %w", err)
 	}
 	log.G(ctx).Debugf("Use OCI runtime %+v for sandbox %q and container %q", ociRuntime, sandboxID, id)
+
+	klog.Infof("%s [CONTINUUM] 0914 containerd:containerMounts:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 
 	spec, err := c.containerSpec(id, sandboxID, sandboxPid, sandbox.NetNSPath, containerName, containerdImage.Name(), config, sandboxConfig,
 		&image.ImageSpec.Config, append(mounts, volumeMounts...), ociRuntime)
@@ -228,6 +233,8 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 		}
 	}()
 
+	klog.Infof("%s [CONTINUUM] 0915 containerd:NewContainerIO:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
+
 	specOpts, err := c.containerSpecOpts(config, &image.ImageSpec.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get container spec opts: %w", err)
@@ -248,6 +255,7 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 	if cntr, err = c.client.NewContainer(ctx, id, opts...); err != nil {
 		return nil, fmt.Errorf("failed to create containerd container: %w", err)
 	}
+	klog.Infof("%s [CONTINUUM] 0917 containerd:client:NewContainer:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 	defer func() {
 		if retErr != nil {
 			deferCtx, deferCancel := ctrdutil.DeferContext()
@@ -265,6 +273,7 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 		containerstore.WithContainer(cntr),
 		containerstore.WithContainerIO(containerIO),
 	)
+	klog.Infof("%s [CONTINUUM] 0918 containerd:containerstore.NewContainer:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create internal container object for %q: %w", id, err)
 	}
@@ -281,8 +290,11 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 	if err := c.containerStore.Add(container); err != nil {
 		return nil, fmt.Errorf("failed to add container %q into store: %w", id, err)
 	}
+	klog.Infof("%s [CONTINUUM] 0919 containerd:containerstore.Add:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 
 	containerCreateTimer.WithValues(ociRuntime.Type).UpdateSince(start)
+
+	klog.Infof("%s [CONTINUUM] 0916 containerd:CreateContainer:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 
 	return &runtime.CreateContainerResponse{ContainerId: id}, nil
 }

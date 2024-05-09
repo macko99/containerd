@@ -39,6 +39,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"k8s.io/klog/v2"
 
 	"github.com/containerd/containerd/pkg/cri/annotations"
 	criconfig "github.com/containerd/containerd/pkg/cri/config"
@@ -69,6 +70,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		return nil, errors.New("sandbox config must include metadata")
 	}
 	name := makeSandboxName(metadata)
+	klog.Infof("%s [CONTINUUM] 0901 containerd:RunPodSandbox:start sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 	log.G(ctx).WithField("podsandboxid", id).Debugf("generated id for sandbox name %q", name)
 
 	// cleanupErr records the last error returned by the critical cleanup operations in deferred functions,
@@ -103,6 +105,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 			CreatedAt: time.Now().UTC(),
 		},
 	)
+	klog.Infof("%s [CONTINUUM] 0902 containerd:NewSandbox:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 	// Ensure sandbox container image snapshot.
 	image, err := c.ensureImageExists(ctx, c.config.SandboxImage, config)
@@ -113,6 +116,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 	if err != nil {
 		return nil, fmt.Errorf("failed to get image from containerd %q: %w", image.ID, err)
 	}
+	klog.Infof("%s [CONTINUUM] 0903 containerd:ensureImageExists:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 	ociRuntime, err := c.getSandboxRuntime(config, r.GetRuntimeHandler())
 	if err != nil {
@@ -137,6 +141,8 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 			selinux.ReleaseLabel(sandbox.ProcessLabel)
 		}
 	}()
+
+	klog.Infof("%s [CONTINUUM] 0904 containerd:sandboxContainerSpec:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 	// handle any KVM based runtime
 	if err := modifyProcessLabel(ociRuntime.Type, spec); err != nil {
@@ -229,6 +235,8 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		}
 	}()
 
+	klog.Infof("%s [CONTINUUM] 0905 containerd:getSandboxRootDir:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
+
 	// Setup files required for the sandbox.
 	if err = c.setupSandboxFiles(id, config); err != nil {
 		return nil, fmt.Errorf("failed to setup sandbox files: %w", err)
@@ -241,6 +249,8 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 			}
 		}
 	}()
+
+	klog.Infof("%s [CONTINUUM] 0906 containerd:setupSandboxFiles:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 	// Update sandbox created timestamp.
 	info, err := container.Info(ctx)
@@ -338,6 +348,8 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		sandboxCreateNetworkTimer.UpdateSince(netStart)
 	}
 
+	klog.Infof("%s [CONTINUUM] 0907 containerd:podNetwork:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
+
 	// Create sandbox task in containerd.
 	log.G(ctx).Tracef("Create sandbox container (id=%q, name=%q).",
 		id, name)
@@ -368,6 +380,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait for sandbox container task: %w", err)
 	}
+	klog.Infof("%s [CONTINUUM] 0908 containerd:task.wait:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 	nric, err := nri.New()
 	if err != nil {
@@ -410,6 +423,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 
 	sandboxRuntimeCreateTimer.WithValues(ociRuntime.Type).UpdateSince(runtimeStart)
 
+	klog.Infof("%s [CONTINUUM] 0909 containerd:RunPodSandbox:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 	return &runtime.RunPodSandboxResponse{PodSandboxId: id}, nil
 }
 

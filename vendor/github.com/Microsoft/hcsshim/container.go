@@ -10,6 +10,7 @@ import (
 	"github.com/Microsoft/hcsshim/internal/hcs"
 	"github.com/Microsoft/hcsshim/internal/hcs/schema1"
 	"github.com/Microsoft/hcsshim/internal/mergemaps"
+	"k8s.io/klog/v2"
 )
 
 // ContainerProperties holds the properties for a container and the processes running in that container
@@ -71,6 +72,7 @@ func init() {
 
 // CreateContainer creates a new container with the given configuration but does not start it.
 func CreateContainer(id string, c *ContainerConfig) (Container, error) {
+	klog.Infof("%s [CONTINUUM] 0910 containerd:CreateContainer:start container=%s", time.Now().UnixNano(), id)
 	fullConfig, err := mergemaps.MergeJSON(c, createContainerAdditionalJSON)
 	if err != nil {
 		return nil, fmt.Errorf("failed to merge additional JSON '%s': %s", createContainerAdditionalJSON, err)
@@ -80,6 +82,7 @@ func CreateContainer(id string, c *ContainerConfig) (Container, error) {
 	if err != nil {
 		return nil, err
 	}
+	klog.Infof("%s [CONTINUUM] 0911 containerd:CreateContainer:done container=%s", time.Now().UnixNano(), id)
 	return &container{system: system}, err
 }
 
