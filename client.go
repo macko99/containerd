@@ -294,7 +294,7 @@ func (c *Client) NewContainer(ctx context.Context, id string, opts ...NewContain
 	if err != nil {
 		return nil, err
 	}
-	klog.Infof("%s [CONTINUUM] 0943 containerd:Create:done sandbox==%s", time.Now().UnixNano(), id)
+	klog.Infof("%s [CONTINUUM] 0943 containerd:Create:done sandbox=%s", time.Now().UnixNano(), id)
 	return containerFromRecord(c, r), nil
 }
 
