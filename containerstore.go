@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"time"
 
 	containersapi "github.com/containerd/containerd/api/services/containers/v1"
 	"github.com/containerd/containerd/containers"
@@ -27,6 +28,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/klog/v2"
 )
 
 type remoteContainers struct {
@@ -107,6 +109,7 @@ func (r *remoteContainers) stream(ctx context.Context, filters ...string) ([]con
 }
 
 func (r *remoteContainers) Create(ctx context.Context, container containers.Container) (containers.Container, error) {
+	klog.Infof("%s [CONTINUUM] 0944 containerd:containerstore:Create:start sandbox=%s", time.Now().UnixNano(), container.ID)
 	created, err := r.client.Create(ctx, &containersapi.CreateContainerRequest{
 		Container: containerToProto(&container),
 	})
@@ -114,6 +117,7 @@ func (r *remoteContainers) Create(ctx context.Context, container containers.Cont
 		return containers.Container{}, errdefs.FromGRPC(err)
 	}
 
+	klog.Infof("%s [CONTINUUM] 0945 containerd:containerstore:Create:done sandbox=%s", time.Now().UnixNano(), container.ID)
 	return containerFromProto(&created.Container), nil
 
 }

@@ -31,6 +31,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"k8s.io/klog/v2"
 
 	cio "github.com/containerd/containerd/pkg/cri/io"
 	containerstore "github.com/containerd/containerd/pkg/cri/store/container"
@@ -56,6 +57,8 @@ func (c *criService) StartContainer(ctx context.Context, r *runtime.StartContain
 	meta := cntr.Metadata
 	container := cntr.Container
 	config := meta.Config
+
+	klog.Infof("%s [CONTINUUM] 0946 containerd:client:StartContainer:start sandbox=%s", time.Now().UnixNano(), id)
 
 	// Set starting state to prevent other start/remove operations against this container
 	// while it's being started.
@@ -164,6 +167,7 @@ func (c *criService) StartContainer(ctx context.Context, r *runtime.StartContain
 	if err := task.Start(ctx); err != nil {
 		return nil, fmt.Errorf("failed to start containerd task %q: %w", id, err)
 	}
+	klog.Infof("%s [CONTINUUM] 0947 containerd:task.start:done sandbox=%s", time.Now().UnixNano(), id)
 
 	// Update container start timestamp.
 	if err := cntr.Status.UpdateSync(func(status containerstore.Status) (containerstore.Status, error) {
@@ -178,6 +182,8 @@ func (c *criService) StartContainer(ctx context.Context, r *runtime.StartContain
 	c.eventMonitor.startContainerExitMonitor(context.Background(), id, task.Pid(), exitCh)
 
 	containerStartTimer.WithValues(info.Runtime.Name).UpdateSince(start)
+
+	klog.Infof("%s [CONTINUUM] 0948 containerd:StartContainer:done sandbox=%s", time.Now().UnixNano(), id)
 
 	return &runtime.StartContainerResponse{}, nil
 }

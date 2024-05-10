@@ -149,11 +149,15 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		return nil, err
 	}
 
+	klog.Infof("%s [CONTINUUM] 0920 containerd:modifyProcessLabel:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
+
 	if config.GetLinux().GetSecurityContext().GetPrivileged() {
 		// If privileged don't set selinux label, but we still record the MCS label so that
 		// the unused label can be freed later.
 		spec.Process.SelinuxLabel = ""
 	}
+
+	klog.Infof("%s [CONTINUUM] 0921 containerd:GetSecurityContext:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 	// Generate spec options that will be applied to the spec later.
 	specOpts, err := c.sandboxContainerSpecOpts(config, &image.ImageSpec.Config)
@@ -161,13 +165,19 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		return nil, fmt.Errorf("failed to generate sanbdox container spec options: %w", err)
 	}
 
+	klog.Infof("%s [CONTINUUM] 0922 containerd:sandboxContainerSpecOpts:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
+
 	sandboxLabels := buildLabels(config.Labels, image.ImageSpec.Config.Labels, containerKindSandbox)
+
+	klog.Infof("%s [CONTINUUM] 0923 containerd:buildLabels:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 	runtimeOpts, err := generateRuntimeOptions(ociRuntime, c.config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate runtime options: %w", err)
 	}
+	klog.Infof("%s [CONTINUUM] 0924 containerd:generateRuntimeOptions:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 	snapshotterOpt := snapshots.WithLabels(snapshots.FilterInheritedLabels(config.Annotations))
+	klog.Infof("%s [CONTINUUM] 0925 containerd:snapshots:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 	opts := []containerd.NewContainerOpts{
 		containerd.WithSnapshotter(c.config.ContainerdConfig.Snapshotter),
 		customopts.WithNewSnapshot(id, containerdImage, snapshotterOpt),
@@ -176,10 +186,13 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		containerd.WithContainerExtension(sandboxMetadataExtension, &sandbox.Metadata),
 		containerd.WithRuntime(ociRuntime.Type, runtimeOpts)}
 
+	klog.Infof("%s [CONTINUUM] 0926 containerd:NewContainerOpts:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 	container, err := c.client.NewContainer(ctx, id, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create containerd container: %w", err)
 	}
+
+	klog.Infof("%s [CONTINUUM] 0927 containerd:NewContainer:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 	// Add container into sandbox store in INIT state.
 	sandbox.Container = container
@@ -211,6 +224,8 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		return nil, fmt.Errorf("failed to create sandbox root directory %q: %w",
 			sandboxRootDir, err)
 	}
+
+	klog.Infof("%s [CONTINUUM] 0928 containerd:getSandboxRootDir:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 	defer func() {
 		if retErr != nil {
 			// Cleanup the sandbox root directory.
@@ -225,6 +240,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		return nil, fmt.Errorf("failed to create volatile sandbox root directory %q: %w",
 			volatileSandboxRootDir, err)
 	}
+	klog.Infof("%s [CONTINUUM] 0929 containerd:getVolatileSandboxRootDir:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 	defer func() {
 		if retErr != nil {
 			// Cleanup the volatile sandbox root directory.
@@ -258,6 +274,8 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		return nil, fmt.Errorf("failed to get sandbox container info: %w", err)
 	}
 
+	klog.Infof("%s [CONTINUUM] 0930 containerd:container.Info:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
+
 	podNetwork := true
 
 	if goruntime.GOOS != "windows" &&
@@ -273,6 +291,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 
 	if podNetwork {
 		netStart := time.Now()
+		klog.Infof("%s [CONTINUUM] 0931 containerd:podNetwork:start sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 		// If it is not in host network namespace then create a namespace and set the sandbox
 		// handle. NetNSPath in sandbox metadata and NetNS is non empty only for non host network
@@ -283,10 +302,12 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 			netnsMountDir = filepath.Join(c.config.StateDir, "netns")
 		}
 		sandbox.NetNS, err = netns.NewNetNS(netnsMountDir)
+		klog.Infof("%s [CONTINUUM] 0932 containerd:NewNetNS:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create network namespace for sandbox %q: %w", id, err)
 		}
 		sandbox.NetNSPath = sandbox.NetNS.GetPath()
+		klog.Infof("%s [CONTINUUM] 0933 containerd:NetNS.GetPath:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 		defer func() {
 			// Remove the network namespace only if all the resource cleanup is done.
@@ -301,6 +322,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 
 		// Update network namespace in the container's spec
 		c.updateNetNamespacePath(spec, sandbox.NetNSPath)
+		klog.Infof("%s [CONTINUUM] 0934 containerd:updateNetNamespacePath:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 		if err := container.Update(ctx,
 			// Update spec of the container
@@ -310,6 +332,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		); err != nil {
 			return nil, fmt.Errorf("failed to update the network namespace for the sandbox container %q: %w", id, err)
 		}
+		klog.Infof("%s [CONTINUUM] 0935 containerd:container.Update:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 		// Define this defer to teardownPodNetwork prior to the setupPodNetwork function call.
 		// This is because in setupPodNetwork the resource is allocated even if it returns error, unlike other resource creation functions.
@@ -336,6 +359,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		if err := c.setupPodNetwork(ctx, &sandbox); err != nil {
 			return nil, fmt.Errorf("failed to setup network for sandbox %q: %w", id, err)
 		}
+		klog.Infof("%s [CONTINUUM] 0936 containerd:setupPodNetwork:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 		// Update metadata here to save CNI result and pod IPs to disk.
 		if err := container.Update(ctx,
@@ -344,8 +368,10 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		); err != nil {
 			return nil, fmt.Errorf("failed to update the network namespace for the sandbox container %q: %w", id, err)
 		}
+		klog.Infof("%s [CONTINUUM] 0937 containerd:container.Update:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 
 		sandboxCreateNetworkTimer.UpdateSince(netStart)
+		klog.Infof("%s [CONTINUUM] 0938 containerd:UpdateSince:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
 	}
 
 	klog.Infof("%s [CONTINUUM] 0907 containerd:podNetwork:done sandbox=%s name=%s", time.Now().UnixNano(), id, name)
@@ -363,6 +389,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 	if err != nil {
 		return nil, fmt.Errorf("failed to create containerd task: %w", err)
 	}
+	klog.Infof("%s [CONTINUUM] 0949 containerd:NewTask:done sandbox=%s", time.Now().UnixNano(), id)
 	defer func() {
 		if retErr != nil {
 			deferCtx, deferCancel := ctrdutil.DeferContext()

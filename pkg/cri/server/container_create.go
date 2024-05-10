@@ -241,6 +241,7 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 	}
 
 	containerLabels := buildLabels(config.Labels, image.ImageSpec.Config.Labels, containerKindContainer)
+	klog.Infof("%s [CONTINUUM] 0950 containerd:buildLabels:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 
 	runtimeOptions, err := getRuntimeOptions(sandboxInfo)
 	if err != nil {

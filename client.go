@@ -66,6 +66,7 @@ import (
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"k8s.io/klog/v2"
 )
 
 func init() {
@@ -269,11 +270,13 @@ func (c *Client) Containers(ctx context.Context, filters ...string) ([]Container
 // NewContainer will create a new container with the provided id.
 // The id must be unique within the namespace.
 func (c *Client) NewContainer(ctx context.Context, id string, opts ...NewContainerOpts) (Container, error) {
+	klog.Infof("%s [CONTINUUM] 0940 containerd:NewContainer:start sandbox=%s", time.Now().UnixNano(), id)
 	ctx, done, err := c.WithLease(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer done(ctx)
+	klog.Infof("%s [CONTINUUM] 0941 containerd:WithLease:done sandbox=%s", time.Now().UnixNano(), id)
 
 	container := containers.Container{
 		ID: id,
@@ -281,6 +284,7 @@ func (c *Client) NewContainer(ctx context.Context, id string, opts ...NewContain
 			Name: c.runtime,
 		},
 	}
+	klog.Infof("%s [CONTINUUM] 0942 containerd:RuntimeInfo:info sandbox=%s runtime=%s", time.Now().UnixNano(), id, c.runtime)
 	for _, o := range opts {
 		if err := o(ctx, c, &container); err != nil {
 			return nil, err
@@ -290,6 +294,7 @@ func (c *Client) NewContainer(ctx context.Context, id string, opts ...NewContain
 	if err != nil {
 		return nil, err
 	}
+	klog.Infof("%s [CONTINUUM] 0943 containerd:Create:done sandbox==%s", time.Now().UnixNano(), id)
 	return containerFromRecord(c, r), nil
 }
 
