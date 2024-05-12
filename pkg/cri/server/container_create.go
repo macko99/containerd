@@ -247,12 +247,14 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 	if err != nil {
 		return nil, fmt.Errorf("failed to get runtime options: %w", err)
 	}
+	klog.Infof("%s [CONTINUUM] 0951 containerd:getRuntimeOptions:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 	opts = append(opts,
 		containerd.WithSpec(spec, specOpts...),
 		containerd.WithRuntime(sandboxInfo.Runtime.Name, runtimeOptions),
 		containerd.WithContainerLabels(containerLabels),
 		containerd.WithContainerExtension(containerMetadataExtension, &meta))
 	var cntr containerd.Container
+	klog.Infof("%s [CONTINUUM] 0952 containerd:cntr:done sandbox=%s name=%s", time.Now().UnixNano(), sandboxID, name)
 	if cntr, err = c.client.NewContainer(ctx, id, opts...); err != nil {
 		return nil, fmt.Errorf("failed to create containerd container: %w", err)
 	}

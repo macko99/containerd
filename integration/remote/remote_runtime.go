@@ -234,6 +234,7 @@ func (r *RuntimeService) ListPodSandbox(filter *runtimeapi.PodSandboxFilter, opt
 // CreateContainer creates a new container in the specified PodSandbox.
 func (r *RuntimeService) CreateContainer(podSandBoxID string, config *runtimeapi.ContainerConfig, sandboxConfig *runtimeapi.PodSandboxConfig, opts ...grpc.CallOption) (string, error) {
 	klog.V(10).Infof("[RuntimeService] CreateContainer (podSandBoxID=%v, timeout=%v)", podSandBoxID, r.timeout)
+	klog.Infof("%s [CONTINUUM] 0962 containerd:CreateContainer:start sandbox=%s name=%s", time.Now().UnixNano(), podSandBoxID, config.GetMetadata())
 	ctx, cancel := getContextWithTimeout(r.timeout)
 	defer cancel()
 
@@ -253,7 +254,7 @@ func (r *RuntimeService) CreateContainer(podSandBoxID string, config *runtimeapi
 		klog.Errorf("CreateContainer failed: %s", errorMessage)
 		return "", errors.New(errorMessage)
 	}
-
+	klog.Infof("%s [CONTINUUM] 0963 containerd:CreateContainer:done sandbox=%s name=%s", time.Now().UnixNano(), podSandBoxID, resp.ContainerId)
 	return resp.ContainerId, nil
 }
 

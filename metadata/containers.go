@@ -33,6 +33,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	bolt "go.etcd.io/bbolt"
+	"k8s.io/klog/v2"
 )
 
 type containerStore struct {
@@ -115,20 +116,24 @@ func (s *containerStore) List(ctx context.Context, fs ...string) ([]containers.C
 }
 
 func (s *containerStore) Create(ctx context.Context, container containers.Container) (containers.Container, error) {
+	klog.Infof("%s [CONTINUUM] 0964 containerd:Create:start sandbox=%s", time.Now().UnixNano(), container.ID)
 	namespace, err := namespaces.NamespaceRequired(ctx)
 	if err != nil {
 		return containers.Container{}, err
 	}
+	klog.Infof("%s [CONTINUUM] 0965 containerd:Create:NamespaceRequired:done sandbox=%s", time.Now().UnixNano(), container.ID)
 
 	if err := validateContainer(&container); err != nil {
 		return containers.Container{}, fmt.Errorf("create container failed validation: %w", err)
 	}
+	klog.Infof("%s [CONTINUUM] 0966 containerd:Create:validateContainer:done sandbox=%s", time.Now().UnixNano(), container.ID)
 
 	if err := update(ctx, s.db, func(tx *bolt.Tx) error {
 		bkt, err := createContainersBucket(tx, namespace)
 		if err != nil {
 			return err
 		}
+		klog.Infof("%s [CONTINUUM] 0967 containerd:Create:update:done sandbox=%s", time.Now().UnixNano(), container.ID)
 
 		cbkt, err := bkt.CreateBucket([]byte(container.ID))
 		if err != nil {
@@ -137,6 +142,7 @@ func (s *containerStore) Create(ctx context.Context, container containers.Contai
 			}
 			return err
 		}
+		klog.Infof("%s [CONTINUUM] 0968 containerd:Create:CreateBucket:done sandbox=%s", time.Now().UnixNano(), container.ID)
 
 		container.CreatedAt = time.Now().UTC()
 		container.UpdatedAt = container.CreatedAt
@@ -149,6 +155,7 @@ func (s *containerStore) Create(ctx context.Context, container containers.Contai
 		return containers.Container{}, err
 	}
 
+	klog.Infof("%s [CONTINUUM] 0969 containerd:Create:done sandbox=%s", time.Now().UnixNano(), container.ID)
 	return container, nil
 }
 

@@ -21,10 +21,12 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/leases"
+	"k8s.io/klog/v2"
 )
 
 // WithLease attaches a lease on the context
 func (c *Client) WithLease(ctx context.Context, opts ...leases.Opt) (context.Context, func(context.Context) error, error) {
+	klog.Infof("%s [CONTINUUM] 0970 containerd:WithLease:start sandbox=%s", time.Now().UnixNano(), ctx)
 	nop := func(context.Context) error { return nil }
 
 	_, ok := leases.FromContext(ctx)
@@ -48,6 +50,7 @@ func (c *Client) WithLease(ctx context.Context, opts ...leases.Opt) (context.Con
 	}
 
 	ctx = leases.WithLease(ctx, l.ID)
+	klog.Infof("%s [CONTINUUM] 0971 containerd:WithLease:done sandbox=%s", time.Now().UnixNano(), ctx)
 	return ctx, func(ctx context.Context) error {
 		return ls.Delete(ctx, l)
 	}, nil

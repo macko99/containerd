@@ -19,6 +19,7 @@ package server
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/log"
@@ -26,6 +27,7 @@ import (
 	"golang.org/x/net/context"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 	runtime_alpha "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+	"k8s.io/klog/v2"
 
 	ctrdutil "github.com/containerd/containerd/pkg/cri/util"
 	"github.com/containerd/containerd/pkg/deprecation"
@@ -409,6 +411,7 @@ func (in *instrumentedService) CreateContainer(ctx context.Context, r *runtime.C
 	}
 	log.G(ctx).Infof("CreateContainer within sandbox %q for container %+v",
 		r.GetPodSandboxId(), r.GetConfig().GetMetadata())
+	klog.Infof("%s [CONTINUUM] 0960 containerd:CreateContainer:start sandbox=%s name=%s", time.Now().UnixNano(), r.GetPodSandboxId(), r.GetConfig().GetMetadata())
 	defer func() {
 		if err != nil {
 			log.G(ctx).WithError(err).Errorf("CreateContainer within sandbox %q for %+v failed",
@@ -419,6 +422,7 @@ func (in *instrumentedService) CreateContainer(ctx context.Context, r *runtime.C
 		}
 	}()
 	res, err = in.c.CreateContainer(ctrdutil.WithNamespace(ctx), r)
+	klog.Infof("%s [CONTINUUM] 0961 containerd:CreateContainer:done sandbox=%s name=%s", time.Now().UnixNano(), r.GetPodSandboxId(), r.GetConfig().GetMetadata())
 	return res, errdefs.ToGRPC(err)
 }
 
