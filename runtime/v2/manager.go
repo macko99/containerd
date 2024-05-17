@@ -23,6 +23,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/containerd/containerd/containers"
 	"github.com/containerd/containerd/errdefs"
@@ -156,6 +157,7 @@ func (m *ShimManager) ID() string {
 
 // Start launches a new shim instance
 func (m *ShimManager) Start(ctx context.Context, id string, opts runtime.CreateOpts) (_ ShimProcess, retErr error) {
+	log.G(ctx).Infof("%s [CONTINUUM] 0034 ShimManager:Start:start context=%s", time.Now().UnixNano(), id)
 	bundle, err := NewBundle(ctx, m.root, m.state, id, opts.Spec.Value)
 	if err != nil {
 		return nil, err
@@ -187,6 +189,7 @@ func (m *ShimManager) Start(ctx context.Context, id string, opts runtime.CreateO
 		return nil, fmt.Errorf("failed to add task: %w", err)
 	}
 
+	log.G(ctx).Infof("%s [CONTINUUM] 0035 ShimManager:Start:done context=%s", time.Now().UnixNano(), id)
 	return shimTask, nil
 }
 
