@@ -64,7 +64,6 @@ func loadAddress(path string) (string, error) {
 }
 
 func loadShim(ctx context.Context, bundle *Bundle, onClose func()) (_ *shimTask, err error) {
-	// log.G(ctx).Infof("%s [CONTINUUM] 0030 loadShim:start context=%s", time.Now().UnixNano(), ctx)
 	address, err := loadAddress(filepath.Join(bundle.Path, "address"))
 	if err != nil {
 		return nil, err
@@ -132,7 +131,6 @@ func loadShim(ctx context.Context, bundle *Bundle, onClose func()) (_ *shimTask,
 	if _, err := s.PID(ctx); err != nil {
 		return nil, err
 	}
-	log.G(ctx).Infof("%s [CONTINUUM] 0031 loadShim:done context=%s", time.Now().UnixNano(), s.ID())
 	return s, nil
 }
 
@@ -325,7 +323,6 @@ func (s *shimTask) delete(ctx context.Context, removeTask func(ctx context.Conte
 }
 
 func (s *shimTask) Create(ctx context.Context, opts runtime.CreateOpts) (runtime.Task, error) {
-	// log.G(ctx).Infof("%s [CONTINUUM] 0032 shimTask:Create:start context=%s", time.Now().UnixNano(), ctx)
 	topts := opts.TaskOptions
 	if topts == nil {
 		topts = opts.RuntimeOptions
@@ -352,7 +349,6 @@ func (s *shimTask) Create(ctx context.Context, opts runtime.CreateOpts) (runtime
 	if err != nil {
 		return nil, errdefs.FromGRPC(err)
 	}
-	log.G(ctx).Infof("%s [CONTINUUM] 0033 shimTask:Create:done context=%s", time.Now().UnixNano(), s.ID())
 
 	return s, nil
 }

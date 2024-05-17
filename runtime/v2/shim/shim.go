@@ -38,7 +38,6 @@ import (
 	"github.com/containerd/ttrpc"
 	"github.com/gogo/protobuf/proto"
 	"github.com/sirupsen/logrus"
-	"k8s.io/klog/v2"
 )
 
 // Publisher for events
@@ -173,25 +172,14 @@ func setLogger(ctx context.Context, id string) (context.Context, error) {
 		TimestampFormat: log.RFC3339NanoFixed,
 		FullTimestamp:   true,
 	})
-	l.Logger.SetLevel(logrus.DebugLevel)
-	// if debugFlag {
-	// 	l.Logger.SetLevel(logrus.DebugLevel)
-	// }
-	// f, err := openLog(ctx, id)
-	// if err != nil { //nolint:nolintlint,staticcheck // Ignore SA4023 as some platforms always return error
-	// 	return ctx, err
-	// }
-	// l.Logger.SetOutput(f)
-	if file := "/tmp/containerd.log"; file != "" {
-		f, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND|os.O_SYNC, 0o644)
-		if err != nil {
-			return ctx, err
-		}
-		l.Logger.SetOutput(f)
+	if debugFlag {
+		l.Logger.SetLevel(logrus.DebugLevel)
 	}
-
-	l.Infof("%s [CONTINUUM] 0001 shim started", time.Now().UnixNano())
-	klog.Infof("%s [CONTINUUM] 0001 shim started", time.Now().UnixNano())
+	f, err := openLog(ctx, id)
+	if err != nil { //nolint:nolintlint,staticcheck // Ignore SA4023 as some platforms always return error
+		return ctx, err
+	}
+	l.Logger.SetOutput(f)
 	return log.WithLogger(ctx, l), nil
 }
 

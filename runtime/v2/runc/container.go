@@ -26,13 +26,11 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/containerd/cgroups"
 	cgroupsv2 "github.com/containerd/cgroups/v2"
 	"github.com/containerd/console"
 	"github.com/containerd/containerd/errdefs"
-	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/mount"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/pkg/process"
@@ -45,7 +43,6 @@ import (
 
 // NewContainer returns a new runc container
 func NewContainer(ctx context.Context, platform stdio.Platform, r *task.CreateTaskRequest) (_ *Container, retErr error) {
-	log.G(ctx).Infof("%s [CONTINUUM] 0038 container:NewContainer:start context=%s", time.Now().UnixNano(), r.ID)
 	ns, err := namespaces.NamespaceRequired(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("create namespace: %w", err)
@@ -161,7 +158,6 @@ func NewContainer(ctx context.Context, platform stdio.Platform, r *task.CreateTa
 		}
 		container.cgroup = cg
 	}
-	log.G(ctx).Infof("%s [CONTINUUM] 0039 container:NewContainer:done context=%s", time.Now().UnixNano(), container.ID)
 	return container, nil
 }
 
@@ -356,7 +352,6 @@ func (c *Container) ProcessRemove(id string) {
 
 // Start a container process
 func (c *Container) Start(ctx context.Context, r *task.StartRequest) (process.Process, error) {
-	log.G(ctx).Infof("%s [CONTINUUM] 0040 container:Start:done context=%s", time.Now().UnixNano(), r.ID)
 	p, err := c.Process(r.ExecID)
 	if err != nil {
 		return nil, err
@@ -383,7 +378,6 @@ func (c *Container) Start(ctx context.Context, r *task.StartRequest) (process.Pr
 		}
 		c.cgroup = cg
 	}
-	log.G(ctx).Infof("%s [CONTINUUM] 0041 container:Start:done context=%s", time.Now().UnixNano(), r.ID)
 	return p, nil
 }
 
