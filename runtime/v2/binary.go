@@ -61,6 +61,7 @@ type binary struct {
 }
 
 func (b *binary) Start(ctx context.Context, opts *types.Any, onClose func()) (_ *shim, err error) {
+	// log.G(ctx).Infof("%s [CONTINUUM] 0036 binary:Start:start context=%s", time.Now().UnixNano(), ctx)
 	args := []string{"-id", b.bundle.ID}
 	switch log.GetLevel() {
 	case log.DebugLevel, log.TraceLevel:
@@ -132,6 +133,7 @@ func (b *binary) Start(ctx context.Context, opts *types.Any, onClose func()) (_ 
 		return nil, err
 	}
 	client := ttrpc.NewClient(conn, ttrpc.WithOnClose(onCloseWithShimLog))
+	// log.G(ctx).Infof("%s [CONTINUUM] 0037 binary:Start:done context=%s", time.Now().UnixNano(), ctx)
 	return &shim{
 		bundle: b.bundle,
 		client: client,
