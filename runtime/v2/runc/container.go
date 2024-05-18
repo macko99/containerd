@@ -383,7 +383,7 @@ func (c *Container) Start(ctx context.Context, r *task.StartRequest) (process.Pr
 		}
 		c.cgroup = cg
 	}
-	log.G(ctx).Infof("%s [CONTINUUM] 0041 container:Start:done context=%s", time.Now().UnixNano(), r.ID)
+	log.G(ctx).Infof("%s [CONTINUUM] 0041 container:process:Start:done context=%s", time.Now().UnixNano(), r.ID)
 	return p, nil
 }
 
